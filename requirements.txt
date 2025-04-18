@@ -3,6 +3,6 @@ pandas
 numpy
 scikit-learn
 matplotlib
-mysql-connector-python
+psycopg2-binary
 gunicorn
 python-dotenv
