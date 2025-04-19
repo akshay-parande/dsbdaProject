@@ -3,6 +3,7 @@ pandas
 numpy
 scikit-learn
 matplotlib
+psycopg2
 psycopg2-binary
 gunicorn
 python-dotenv

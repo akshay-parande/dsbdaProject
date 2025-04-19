@@ -1,7 +1,7 @@
+import os
 from flask import Flask, render_template, request
 import pickle
 import numpy as np
-import os
 from db_config import get_connection
 
 app = Flask(__name__)
@@ -9,7 +9,7 @@ app = Flask(__name__)
 # Load the pre-trained model
 model = pickle.load(open('model.pkl', 'rb'))
 
-@app.route("/", methods=["GET", "POST", "HEAD"])
+@app.route('/', methods=["GET", "HEAD"])
 def home():
     return render_template('index.html')
 
@@ -25,14 +25,51 @@ def predict():
     prediction = float(model.predict(input_data)[0])  # Convert numpy.float64 → float
 
     # Save prediction data to DB
-    conn = get_connection()  # Use the connection function
-    cursor = conn.cursor()
-    cursor.execute("""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS predictions (
+                id SERIAL PRIMARY KEY,
+                hours_studied FLOAT,
+                attendance FLOAT,
+                internal_marks FLOAT,
+                predicted_score FLOAT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
+        conn.commit()
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS predictions (
+                id SERIAL PRIMARY KEY,
+                hours_studied FLOAT,
+                attendance FLOAT,
+                internal_marks FLOAT,
+                predicted_score FLOAT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        conn.commit()
+
+        cursor.execute("""
         INSERT INTO predictions (hours_studied, attendance, internal_marks, predicted_score)
         VALUES (%s, %s, %s, %s)
-    """, (hours, attendance, internal, prediction))
-    conn.commit()
-    conn.close()
+        """, (hours, attendance, internal, prediction))
+
+        conn.commit()
+
+    except Exception as e:
+        print("Database error:", e)
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
 
     # Return the result back to the user
     return render_template('index.html', result=round(prediction, 2),
