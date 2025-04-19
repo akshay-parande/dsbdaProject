@@ -65,10 +65,14 @@ def predict():
         print("Database error:", e)
 
     finally:
-        if cursor:
+        try:
             cursor.close()
-        if conn:
+        except:
+            pass
+        try:
             conn.close()
+        except:
+            pass
 
 
     # Return the result back to the user
